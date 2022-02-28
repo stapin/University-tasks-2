@@ -5,7 +5,6 @@
 #define M_E 2.718281828459
 #define SIZE 20
 #define APPROX 25
-// 1) Реализовать простое двоичное дерево поиска + сортировка.
 
 typedef struct bin_tree
 {
@@ -115,8 +114,6 @@ typedef struct sbf
     int denL;
     int numR;
     int denR;
-    // 0 - middle.
-    // 1 - left, 2 - right.
     int isLeft;
 } sbf;
 
@@ -146,8 +143,6 @@ sbt *get_sbt(int depth)
 }
 
 
-// Зачем передавать дерево, если можно создать его в функции?
-// Надо указать длину приближения.
 void sb_number(double r, size_t len)
 {
     sbt *tree = get_sbt(len);

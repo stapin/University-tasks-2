@@ -36,6 +36,7 @@ void poly_free(poly *head)
 int merge(poly **head, int coeff, int exp)
 {
     if (!head) return 0;
+    if (!coeff) return 1;
     if (!(*head))
     {
         *head = malloc(sizeof(poly));
@@ -63,6 +64,7 @@ int merge(poly **head, int coeff, int exp)
         // (next->exp > exp) для остальных условий.
         else if (curr->exp == exp)
         {
+            // coeff = 0?
             curr->coeff += coeff;
             return 1;
         }
@@ -79,7 +81,8 @@ int merge(poly **head, int coeff, int exp)
     // curr->exp <= exp
     if (curr->exp == exp)
     {
-        curr->coeff = coeff;
+        // Добавить случай, когда coeff = 0;
+        curr->coeff += coeff;
         return 1;
     }
     curr->next = malloc(sizeof(poly));
@@ -137,6 +140,7 @@ poly *poly_get(const char *str)
                 curr_exp = 0;
                 merge(&result, curr_coeff, curr_exp);
                 state = 5;
+                continue;
             }
         }
         if (state == 3)
@@ -171,7 +175,7 @@ poly *poly_get(const char *str)
             ++state;
             continue;
         }
-        if ((state == 5))
+        if (state == 5)
         {
             if (*p == '-' || *p == '+')
             {
@@ -180,9 +184,11 @@ poly *poly_get(const char *str)
                 ++p;
                 continue;
             }
-            puts("Wrong input, state 5. Exepted sign.");
-            poly_free(result);
-            return NULL;
+            // puts("Wrong input, state 5. Exepted sign.");
+            // poly_free(result);
+            // return NULL;
+            state = 1;
+            continue;
         }
         else
         {
@@ -192,10 +198,15 @@ poly *poly_get(const char *str)
         }
     }
 
-    if (state != 5 && state != 1)
+    if (state != 5 && state != 1 && state != 2)
     {
         printf("%s\n", "Error, expected state 5. Wrong input.");
         return NULL;
+    }
+    if (state == 2)
+    {
+        curr_exp = 0;
+        merge(&result, curr_coeff, curr_exp);
     }
     
     return result;
@@ -296,11 +307,29 @@ void poly_print(const poly *head)
         else printf("%dx^%d + ", curr->coeff, curr->exp);
         curr = curr->next;
     }
-    if (!curr->coeff) printf("%d\n", curr->coeff);
-    else if (curr->coeff == 1) printf("%dx\n", curr->coeff);
+    if (!curr->exp) printf("%d\n", curr->coeff);
+    else if (curr->exp == 1) printf("%dx\n", curr->coeff);
     else  printf("%dx^%d\n", curr->coeff, curr->exp);
 }
 
+
+poly *poly_mult(const poly *a, const poly *b)
+{
+    poly *result = NULL;
+    const poly *pa = a, *pb = b;
+    while (pa)
+    {
+        while (pb)
+        {
+            // проверка на нулевые коэффициенты.
+            merge(&result, pa->coeff * pb->coeff, pa->exp + pb->exp);
+            pb = pb->next;
+        }
+        pb = b;
+        pa = pa->next;
+    }
+    return result;
+}
 
 void test_add()
 {
@@ -318,8 +347,19 @@ void test_add()
 
 }
 
+void test_mult()
+{
+    poly *a = poly_get("1 + 1x^1 + 1x^2 + 1x^3");
+    poly *b = poly_get("1 + 1x^1 + 1x^2 - 1x^3");
+    poly_print(a);
+    poly_print(b);
+    poly *c = poly_mult(a, b);
+    poly_print(c);
+}
+
 int main()
 {    
-    test_add();
+    //test_add();
+    test_mult();
     return 0;
 }
