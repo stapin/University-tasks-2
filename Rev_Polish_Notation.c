@@ -1,6 +1,6 @@
 #include "stdio.h"
 #include "stdlib.h"
-
+#include "string.h"
 
 typedef struct stack
 {
@@ -169,50 +169,48 @@ int calc_RPN(const char *str)
 }
 
 // 3 + 5 + 7 - 9 -> 3 5 + 7 + 9 -
-char *inftoRPN(const char *str)
-{
-    if (!str)
-    {
-        puts("Error, arg inftoRPN is NULL.");
-        return NULL;
-    }
-    stack *oper = NULL;
-    stack *s = NULL;
-    size_t resLen = 0;
-    int state = 1;
-    int *end = NULL;
-    int numLen = 0;
-    int num = 0;
-    // state | expectation
-    // 1     | int || ( || gcd || lcm
-    // 2     | + || - || / || * || ( || )
-    while (str)
-    {
-        if (state == 1)
-        {
-            num = strtol(str, &end, 0);
-            if (!num && *str != '0')
-            {
-                state = 2;
-                continue;
-            }
-            resLen += end - str;
-            str = end;
-            stack_push(&s, num);
-        }
-        if (state == 2)
-        {
-
-        }
-
-    }
-    if (state != 1)
-    {
-        puts("Wrong input!");
-        return NULL;
-    }
-    
-}
+// char *inftoRPN(const char *str)
+// {
+//     if (!str)
+//     {
+//         puts("Error, arg inftoRPN is NULL.");
+//         return NULL;
+//     }
+//     stack *oper = NULL;
+//     char *result = malloc(strlen(str));
+//     size_t resLen = 0;
+//     int state = 1;
+//     int *end = NULL;
+//     int numLen = 0;
+//     int num = 0;
+//     // state | expectation
+//     // 1     | int || ( || gcd || lcm
+//     // 2     | + || - || / || * || ( || )
+//     while (str)
+//     {
+//         if (state == 1)
+//         {
+//             num = strtol(str, &end, 0);
+//             if (!num && *str != '0')
+//             {
+//                 state = 2;
+//                 continue;
+//             }
+//             resLen += end - str;
+//             // respointer.
+//             end = memcpy(result, str, end - str);
+//             str = end;
+//         }
+//         if (state == 2)
+//         {
+//         }
+//     }
+//     if (state != 1)
+//     {
+//         puts("Wrong input!");
+//         return NULL;
+//     }
+// }
 
 void test()
 {

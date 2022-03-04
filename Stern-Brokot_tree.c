@@ -4,7 +4,7 @@
 #define M_F 1.618033987
 #define M_E 2.718281828459
 #define SIZE 20
-#define APPROX 25
+#define APPROX 23
 
 typedef struct bin_tree
 {

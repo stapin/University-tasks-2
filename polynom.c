@@ -1,5 +1,9 @@
 #include "stdio.h"
 #include "stdlib.h"
+#define WRONG_INPUT -1
+#define UNKNOWN_ERROR 0
+#define SUCCEED 1
+
 
 typedef struct poly
 {
@@ -8,7 +12,34 @@ typedef struct poly
     struct poly *next;
 } poly;
 
+// int poly_delete(poly *head, int exp)
+// {
+//     if (!head) return 0;
+//     poly *prev = NULL;
+//     while (head)
+//     {
+//         if (head->exp == exp)
+//         {
+//             if (prev)
+//             {
+//                 prev->next = head->next;
+//                 free(head);
+//                 return 1;
+//             }
 
+
+//         }
+//     }
+    
+// }
+
+poly *poly_get_monomial(int c, int e) {
+    poly *head = malloc(sizeof(poly));
+    head->coeff = c;
+    head->exp = e;
+    head->next = NULL;
+    return head;
+}
 
 void poly_free(poly *head)
 {
@@ -28,35 +59,22 @@ void poly_free(poly *head)
     return;
 }
 
-
-
-// Добавить функцию merge(poly*, int coeff, int exp);
-// Добавляет в отсортированный список мономов.
-
-int merge(poly **head, int coeff, int exp)
+int poly_add_monomial(poly **head, int coeff, int exp)
 {
     if (!head) return 0;
     if (!coeff) return 1;
     if (!(*head))
     {
-        *head = malloc(sizeof(poly));
-        (*head)->coeff = coeff;
-        (*head)->exp = exp;
-        (*head)->next = NULL;
+        *head = poly_get_monomial(coeff, exp);
         return 1;
     }
-    
     if ((*head)->exp > exp)
     {
         poly *tmp = *head;
-        *head = malloc(sizeof(poly));
-        (*head)->coeff = coeff;
-        (*head)->exp = exp;
+        *head = poly_get_monomial(coeff, exp);
         (*head)->next = tmp;
         return 1;
     }
-    
-
     poly *curr = *head;
     while (curr->next)
     {
@@ -71,9 +89,7 @@ int merge(poly **head, int coeff, int exp)
         else if (curr->exp < exp)
         {
             poly *tmp = curr->next;
-            curr->next = malloc(sizeof(poly));
-            curr->next->coeff = coeff;
-            curr->next->exp = exp;
+            curr->next = poly_get_monomial(coeff, exp);
             curr->next->next = tmp;
             return 1;
         }
@@ -85,20 +101,126 @@ int merge(poly **head, int coeff, int exp)
         curr->coeff += coeff;
         return 1;
     }
-    curr->next = malloc(sizeof(poly));
-    curr = curr->next;
-    curr->coeff = coeff;
-    curr->exp = exp;
-    curr->next = NULL;
+    curr->next = poly_get_monomial(coeff, exp);
     return 1;
 }
 
-// version 2.
-// add macros for states.
-poly *poly_get(const char *str)
+// poly *poly_get(const char *str)
+// {
+//     poly *result = NULL;
+//     const char *p = str;
+//     int curr_coeff = 0;
+//     int curr_exp = 0;
+//     int sign = 1;
+//     int state = 1;
+//     char *end = NULL;
+//     while (*p)
+//     {
+//         if (*p == ' ')
+//         {
+//             ++p;
+//             continue;
+//         }
+//         if (state == 1)
+//         {
+//             curr_coeff = strtol(p, &end, 0) * sign;
+//             p = end;
+//             if (!curr_coeff)
+//             {
+//                 printf("%s\n", "Wrong input. State 1, expected number.");
+//                 poly_free(result);
+//                 return NULL;
+//             }
+//             ++state;
+//             continue;
+//         }
+//         if (state == 2)
+//         {
+//             if (*p == 'x')
+//             {
+//                 ++p;
+//                 ++state;
+//                 continue;
+//             }
+//             else
+//             {
+//                 // printf("%s\n", "Error state 2!");
+//                 // return NULL;
+//                 curr_exp = 0;
+//                 poly_add_monomial(&result, curr_coeff, curr_exp);
+//                 state = 5;
+//                 continue;
+//             }
+//         }
+//         if (state == 3)
+//         {
+//             if (*p == '^')
+//             {
+//                 ++p;
+//                 ++state;
+//             }
+//             else
+//             {
+//                 curr_exp = 1;
+//                 poly_add_monomial(&result, curr_coeff, curr_exp);
+//                 state = 5;
+//                 // printf("%s\n", "Error state 3!");
+//                 // return NULL;
+//             }
+//             continue;
+//         }
+//         if (state == 4)
+//         {
+//             curr_exp = strtol(p, &end, 0);
+//             p = end;
+//             if (!curr_exp)
+//             {
+//                 printf("%s\n", "Wrong input. State 4, expected number.");
+//                 poly_free(result);
+//                 return NULL;
+//             }
+//             poly_add_monomial(&result, curr_coeff, curr_exp);
+//             ++state;
+//             continue;
+//         }
+//         if (state == 5)
+//         {
+//             if (*p == '-' || *p == '+')
+//             {
+//                 sign = 44 - *p;
+//                 state = 1;
+//                 ++p;
+//                 continue;
+//             }
+//             // puts("Wrong input, state 5. Exepted sign.");
+//             // poly_free(result);
+//             // return NULL;
+//             state = 1;
+//             continue;
+//         }
+//         else
+//         {
+//             puts("Unknown error.");
+//             poly_free(result);
+//             return NULL;
+//         }
+//     }
+//     if (state != 5 && state != 1 && state != 2)
+//     {
+//         printf("%s\n", "Error, expected state 5. Wrong input.");
+//         return NULL;
+//     }
+//     if (state == 2)
+//     {
+//         curr_exp = 0;
+//         poly_add_monomial(&result, curr_coeff, curr_exp);
+//     }
+//     return result;
+// }
+
+int poly_get(const char *str, poly **result)
 {
-    poly *result = NULL;
-    // poly *curr = result;
+    *result = NULL;
     const char *p = str;
     int curr_coeff = 0;
     int curr_exp = 0;
@@ -119,8 +241,8 @@ poly *poly_get(const char *str)
             if (!curr_coeff)
             {
                 printf("%s\n", "Wrong input. State 1, expected number.");
-                poly_free(result);
-                return NULL;
+                poly_free(*result);
+                return WRONG_INPUT;
             }
             ++state;
             continue;
@@ -138,7 +260,7 @@ poly *poly_get(const char *str)
                 // printf("%s\n", "Error state 2!");
                 // return NULL;
                 curr_exp = 0;
-                merge(&result, curr_coeff, curr_exp);
+                poly_add_monomial(result, curr_coeff, curr_exp);
                 state = 5;
                 continue;
             }
@@ -153,7 +275,7 @@ poly *poly_get(const char *str)
             else
             {
                 curr_exp = 1;
-                merge(&result, curr_coeff, curr_exp);
+                poly_add_monomial(result, curr_coeff, curr_exp);
                 state = 5;
                 // printf("%s\n", "Error state 3!");
                 // return NULL;
@@ -168,10 +290,10 @@ poly *poly_get(const char *str)
             if (!curr_exp)
             {
                 printf("%s\n", "Wrong input. State 4, expected number.");
-                poly_free(result);
-                return NULL;
+                poly_free(*result);
+                return WRONG_INPUT;
             }
-            merge(&result, curr_coeff, curr_exp);
+            poly_add_monomial(result, curr_coeff, curr_exp);
             ++state;
             continue;
         }
@@ -193,25 +315,101 @@ poly *poly_get(const char *str)
         else
         {
             puts("Unknown error.");
-            poly_free(result);
-            return NULL;
+            poly_free(*result);
+            return UNKNOWN_ERROR;
         }
     }
 
     if (state != 5 && state != 1 && state != 2)
     {
         printf("%s\n", "Error, expected state 5. Wrong input.");
-        return NULL;
+        poly_free(*result);
+        return WRONG_INPUT;
     }
     if (state == 2)
     {
         curr_exp = 0;
-        merge(&result, curr_coeff, curr_exp);
+        poly_add_monomial(result, curr_coeff, curr_exp);
     }
     
-    return result;
+    return SUCCEED;
 }
 
+
+
+// poly *poly_add(const poly *a, const poly *b)
+// {
+//     if (!a || !b)
+//     {
+//         puts("poly_add error! arguments are NULL.");
+//         return NULL;
+//     }   
+//     poly *result = malloc(sizeof(poly));
+//     poly *curr = result;
+//     const poly *p1 = a;
+//     const poly *p2 = b;
+//     do
+//     {
+//         if (p1->exp < p2->exp)
+//         {
+//             curr->exp = p1->exp;
+//             curr->coeff = p1->coeff;
+//             p1 = p1->next;          
+//         }
+//         else if (p1->exp == p2->exp)
+//         {
+//             curr->exp = p1->exp;
+//             curr->coeff = p1->coeff + p2->coeff;
+//             p1 = p1->next;
+//             p2 = p2->next;           
+//         }
+//         else if (p1->exp > p2->exp)
+//         {
+//             curr->exp = p2->exp;
+//             curr->coeff = p2->coeff;
+//             p2 = p2->next;
+//         }
+//         if (p1 || p2)
+//         {
+//             curr->next = malloc(sizeof(poly));
+//             curr = curr->next;
+//         }
+//     }
+//     while (p1 && p2);
+//     if (!p1 && p2)
+//     {
+//         while (p2)
+//         {
+//             curr->exp = p2->exp;
+//             curr->coeff = p2->coeff;
+//             p2 = p2->next;
+//             if (p2)
+//             {
+//                 curr->next = malloc(sizeof(poly));
+//                 curr = curr->next;
+//             }
+//         }
+//         curr->next = NULL;
+//         return result;
+//     }
+//     if (!p2 && p1)
+//     {
+//         while (p1)
+//         {
+//             curr->exp = p1->exp;
+//             curr->coeff = p1->coeff;
+//             p1 = p1->next;
+//             if (p1)
+//             {
+//                 curr->next = malloc(sizeof(poly));
+//                 curr = curr->next;
+//             }
+//         }
+//         curr->next = NULL;
+//         return result;
+//     }
+//     return result;
+// }
 
 poly *poly_add(const poly *a, const poly *b)
 {
@@ -220,76 +418,44 @@ poly *poly_add(const poly *a, const poly *b)
         puts("poly_add error! arguments are NULL.");
         return NULL;
     }
-    
-    poly *result = malloc(sizeof(poly));
-    poly *curr = result;
-    const poly *p1 = a;
-    const poly *p2 = b;
+    poly *result = NULL;
+    poly **curr = &result;
     do
     {
-        if (p1->exp < p2->exp)
+        if (a->exp < b->exp)
         {
-            curr->exp = p1->exp;
-            curr->coeff = p1->coeff;
-            p1 = p1->next;
-            
+            poly_add_monomial(curr, a->coeff, a->exp);
+            a = a->next;
         }
-        else if (p1->exp == p2->exp)
+        else if (a->exp == b->exp)
         {
-            curr->exp = p1->exp;
-            curr->coeff = p1->coeff + p2->coeff;
-            p1 = p1->next;
-            p2 = p2->next;
-            
+            poly_add_monomial(curr, a->coeff + b->coeff, a->exp);
+            a = a->next;
+            b = b->next;
         }
-        else if (p1->exp > p2->exp)
+        else if (a->exp > b->exp)
         {
-            curr->exp = p2->exp;
-            curr->coeff = p2->coeff;
-            p2 = p2->next;
+            poly_add_monomial(curr, b->coeff, b->exp);
+            b = b->next;
         }
-        if (p1 || p2)
-        {
-            curr->next = malloc(sizeof(poly));
-            curr = curr->next;
-        }
+        curr = &((*curr)->next);
     }
-    while (p1 && p2);
-    if (!p1 && p2)
+    while (a && b);
+    
+    while (b)
     {
-        while (p2)
-        {
-            curr->exp = p2->exp;
-            curr->coeff = p2->coeff;
-            p2 = p2->next;
-            if (p2)
-            {
-                curr->next = malloc(sizeof(poly));
-                curr = curr->next;
-            }
-        }
-        curr->next = NULL;
-        return result;
+        poly_add_monomial(curr, b->coeff, b->exp);
+        curr = &((*curr)->next);
+        b = b->next;
     }
-    if (!p2 && p1)
+    while (a)
     {
-        while (p1)
-        {
-            curr->exp = p1->exp;
-            curr->coeff = p1->coeff;
-            p1 = p1->next;
-            if (p1)
-            {
-                curr->next = malloc(sizeof(poly));
-                curr = curr->next;
-            }
-        }
-        curr->next = NULL;
-        return result;
+        poly_add_monomial(curr, a->coeff, a->exp);
+        curr = &((*curr)->next);
+        a = a->next;
     }
     return result;
 }
-
 
 
 void poly_print(const poly *head)
@@ -322,7 +488,7 @@ poly *poly_mult(const poly *a, const poly *b)
         while (pb)
         {
             // проверка на нулевые коэффициенты.
-            merge(&result, pa->coeff * pb->coeff, pa->exp + pb->exp);
+            poly_add_monomial(&result, pa->coeff * pb->coeff, pa->exp + pb->exp);
             pb = pb->next;
         }
         pb = b;
@@ -331,12 +497,27 @@ poly *poly_mult(const poly *a, const poly *b)
     return result;
 }
 
-void test_add()
+// void test_add()
+// {
+//     //char *p1 = "4x^2 + 5x^4 - 159x^8";
+//     char *p2 = "25x^1 - -14x^4 + 4x^1 --3 + 2x^100";
+//     poly *a = poly_get(p2);
+//     poly *b = poly_get("3x^2 - 1x^3 - 8x^4 + 158x^8 + 8 - 6x^13");
+//     poly_print(a);
+//     poly_print(b);
+//     poly *c = poly_add(a, b);
+//     poly_print(c);
+//     poly_free(c);
+//     poly_free(a);
+//     poly_free(b);
+// }
+
+void test_add2()
 {
-    //char *p1 = "4x^2 + 5x^4 - 159x^8";
-    char *p2 = "25x^1 - -14x^4 + 4x^1 --3 + 2x^100";
-    poly *a = poly_get(p2);
-    poly *b = poly_get("3x^2 - 1x^3 - 8x^4 + 158x^8 + 8 - 6x^13");
+    char *p2 = "25x^1 - -14x^4 + 2 + 4x^1 --3 + 2x^100";
+    poly *a = NULL, *b = NULL;
+    poly_get(p2, &a);
+    poly_get("3x^2 - 1x^3 - 8x^4 + 158x^8 + 8 - 6x^13", &b);
     poly_print(a);
     poly_print(b);
     poly *c = poly_add(a, b);
@@ -344,13 +525,23 @@ void test_add()
     poly_free(c);
     poly_free(a);
     poly_free(b);
-
 }
+
+// void test_mult()
+// {
+//     poly *a = poly_get("1 + 1x^1 + 1x^2 + 1x^3");
+//     poly *b = poly_get("1 + 1x^1 + 1x^2 - 1x^3");
+//     poly_print(a);
+//     poly_print(b);
+//     poly *c = poly_mult(a, b);
+//     poly_print(c);
+// }
 
 void test_mult()
 {
-    poly *a = poly_get("1 + 1x^1 + 1x^2 + 1x^3");
-    poly *b = poly_get("1 + 1x^1 + 1x^2 - 1x^3");
+    poly *a, *b;
+    poly_get("1 - - - 1 + 2x^1 + 1x^2 + 1x^3", &a);
+    poly_get("1 + 1x^1 + 1x^2 + 1x^3", &b);
     poly_print(a);
     poly_print(b);
     poly *c = poly_mult(a, b);
@@ -359,7 +550,7 @@ void test_mult()
 
 int main()
 {    
-    //test_add();
+    //test_add2();
     test_mult();
     return 0;
 }
