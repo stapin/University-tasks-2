@@ -40,8 +40,11 @@ int add_arc(graph *g, int a, int b)
         return SUCCEED;
     }
     node *curr = g->adj_list[a]->head;
-    while (curr->next) curr = curr->next;
-    curr->next = create_node(b);
+    while (curr->next) {
+        if(curr->info == b) return SUCCEED;
+        curr = curr->next;
+    }
+    if(curr->info != b) curr->next = create_node(b);
     return SUCCEED;
 }
 
@@ -66,7 +69,7 @@ int del_arc(graph *g, int a, int b)
     if (!curr) return NO_SUCH_ELEMENT;
     if (!prev) 
     {
-        g->adj_list[a]->head = NULL;
+        g->adj_list[a]->head = curr->next;
         free(curr);
         return SUCCEED;
     }
@@ -128,7 +131,7 @@ void graph_print(graph *g)
     }
 }
 
-int is_biparted_DFS(graph *g)
+int is_biparted_DFS(graph *g, int *part)
 {
     if (g == NULL) return EMPTY_PTR;
     if (g->ver_num <= 0) return FALSE;
@@ -154,10 +157,11 @@ int is_biparted_DFS(graph *g)
             stack_push(&vertices, ver->info);
         }
     }
+    part = color;
     return TRUE;
 }
 
-int is_biparted_BFS(graph *g)
+int is_biparted_BFS(graph *g, int *part)
 {
     if (g == NULL) return EMPTY_PTR;
     if (g->ver_num <= 0) return FALSE;
@@ -187,17 +191,41 @@ int is_biparted_BFS(graph *g)
         }
     }
     queue_free(&vertices);
+    part = color;
     return TRUE;
 }
+
+// int topological_sort(graph *g)
+// {
+//     if (g == NULL) EMPTY_PTR;
+//     if (g->ver_num == 0) return SUCCEED;
+//     stack *s = stack_init(g->adj_list[0]);
+//     int curr;
+//     int *visited = calloc(g->ver_num, sizeof(int));
+//     node *ver = NULL;
+//     while (s)
+//     {
+//         curr = stack_pop(&s);
+//         visited[curr] = 1;
+//         ver = g->adj_list[curr]->head;
+//         while (ver && visited[ver->info])
+//         {
+//             ver = ver->next;
+//         }
+//         if (ver)
+//             stack_push(&s, ver->info);
+//     }    
+// }
 
 void test()
 {
     graph *g = graph_init(5);
     add_arc(g, 1, 2);
+    add_arc(g, 1, 4);
     add_edge(g, 1, 3);
     graph_print(g);
-    del_edge(g, 1, 3);
-    del_arc(g, 1, 3);
+    //del_edge(g, 1, 3);
+    del_arc(g, 1, 2);
     graph_print(g);
     graph_free(&g);
     graph_print(g);
@@ -213,12 +241,14 @@ void test2()
     //add_arc(g, 0, 2);
     add_edge(g, 4, 1);
     graph_print(g);
-    printf("%d\n", is_biparted_DFS(g));
-    printf("%d", is_biparted_BFS(g));
+    int *part = NULL;
+    printf("%d\n", is_biparted_DFS(g, part));
+    printf("%d", is_biparted_BFS(g, part));
 }
 
 int main()
 {
-    test2();
+    //test();
+    test();
     return 0;
 }
