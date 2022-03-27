@@ -2,69 +2,22 @@
 #include "stdlib.h"
 #include "string.h"
 //#include "setjmp.h"
+#include "structlib.h"
+
 #define OPER_COUNT 4
-#define TOKENS_COUNT 9
+#define TOKENS_COUNT 19
 
 #define NOT_FOUND (-1)
 #define EMPTY_PTR (-2)
+#define UNKNOWN_ERROR (-3)
 #define INCORRECT_INPUT 0
 
-typedef struct stack
-{
-    int value;
-    struct stack *next;
-} stack;
+#define TRUE 1
+#define FALSE 0
 
-stack *stack_init(int value)
-{
-    stack *result = malloc(sizeof(stack));
-    result->value = value;
-    result->next = NULL;
-    return result;
-}
+#define STATE_1 1
+#define STATE_2 2
 
-stack *stack_push(stack **head, int value)
-{
-    if (!(*head)) 
-    {
-        *head = stack_init(value);
-        return NULL;
-    }
-    stack *curr = malloc(sizeof(stack));
-    curr->value = value;
-    curr->next = *head;
-    *head = curr;
-    return NULL;
-}
-
-void stack_free(stack *s)
-{
-    stack *curr = s;
-    while (curr->next)
-    {
-        s = curr;
-        curr = curr->next;
-        free(s);
-    }
-}
-
-int stack_pop(stack **head)
-{
-    if (!(*head)) return 0;
-    if ((*head)->next == NULL)
-    {
-        int res = (*head)->value;
-        stack *tmp = *head;
-        stack_free(tmp);
-        *head = NULL;
-        return res;
-    }
-    stack *tmp = *head;
-    int res = (*head)->value;
-    *head = (*head)->next;
-    free(tmp);
-    return res;
-}
 
 int gcd(int a, int b)
 {
@@ -85,106 +38,19 @@ int lcm(int a, int b)
     return a * b / gcd(a, b);
 }
 
-int calc_RPN(const char *str)
-{
-    if (!*str || !str) return 0;
-    stack *s = NULL;
-    const char *p = str;
-    char *end = NULL;
-    int num;
-    int tmp1, tmp2;
-    while (*p)
-    {
-        while (*p == ' ') ++p;
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/')
-        {
-            if (!s || !s->next)
-            {
-                puts("Wrong input. Stack overflow.");
-                return 0;
-            }
-            tmp1 = stack_pop(&s);
-            tmp2 = stack_pop(&s);
-            if (*p == '+') stack_push(&s, tmp2 + tmp1);
-            else if (*p == '-') stack_push(&s, tmp2 - tmp1);
-            else if (*p == '*') stack_push(&s, tmp2 * tmp1);
-            else if (*p == '/') stack_push(&s, tmp2 / tmp1);
 
-            ++p;
-            continue;
-        }
+//const char *operands[OPER_COUNT] = {"+", "-", "*", "/"};
+static const int opPriority[OPER_COUNT] = {1, 1, 2, 2};
+// Operands always must go ahead.
+static const char *tokens[TOKENS_COUNT] = {
+    "+", "-", "*", "/", "gcd", "lcm", "(", ")", ",",
+    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+};
+static const int tokens_len[] = {
+    1, 1, 1, 1, 3, 3, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1
+};
 
-        if (*p == 'g')
-        {
-            ++p;
-            if (*(p++) == 'c')
-            {
-                if (*(p++) == 'd')
-                {
-                    if (!s || !s->next)
-                    {
-                        puts("Wrong input. Less args for lcm of gcd, expected 2.");
-                        return 0;
-                    }
-                    // s->next->value = gcd(s->next->value, s->value);
-                    // stack_pop(&s);
-                    tmp1 = stack_pop(&s);
-                    tmp2 = stack_pop(&s);
-                    stack_push(&s, gcd(tmp1, tmp2));
-                    continue;
-                }
-                puts("Wrong name for gcd.");
-                return 0;    
-            }
-            puts("Wrong name for gcd.");
-            return 0;
-        }
-
-        if (*p == 'l')
-        {
-            ++p;
-            if (*(p++) == 'c')
-            {
-                if (*(p++) == 'm')
-                {
-                    if (!s || !s->next)
-                    {
-                        puts("Wrong input. Less args for lcm of gcd, expected 2.");
-                        return 0;
-                    }
-                    s->next->value = lcm(s->next->value, s->value);
-                    stack_pop(&s);
-                    continue;
-                }
-                puts("Wrong name for lcm.");
-                return 0;
-            }
-            puts("Wrong name for lcm.");
-            return 0;
-        }
-
-        num = strtol(p, &end, 0);
-        if (!num)
-        {
-            puts("Wrong input, number expected.");
-            return 0;
-        }
-        stack_push(&s, num);
-        p = end;
-    }
-    int result = s->value;
-    stack_free(s);
-    return result;
-}
-
-
-
-// Можно цифры тоже сделать в виде токенов.
-char const *operands[OPER_COUNT] = {"+", "-", "*", "/"};
-int opPriority[OPER_COUNT] = {1, 1, 2, 2};
-char const *tokens[TOKENS_COUNT] = {"+", "-", "*", "/", "gcd", "lcm", "(", ")", ","};
-int tokens_len[] = {1, 1, 1, 1, 3, 3, 1, 1, 1};
-char const *funcs[] = {"gcd", "lcm"};
 typedef enum token_code
 {
     ADD,
@@ -195,7 +61,17 @@ typedef enum token_code
     LCM,
     OP_BRK,
     CL_BRK,
-    COMMA
+    COMMA,
+    ZERO,
+    ONE,
+    TWO,
+    THREE,
+    FOUR,
+    FIVE,
+    SIX,
+    SEVEN,
+    EIGHT,
+    NINE
 } token_code;
 
 int strcmpr(const char *str1, const char *str2, size_t len)
@@ -208,6 +84,12 @@ int strcmpr(const char *str1, const char *str2, size_t len)
     return 1;
 }
 
+int is_digit(token_code code)
+{
+    if (code >= 9 && code <= 18) return TRUE;
+    return FALSE;
+}
+
 int read_token(const char **ptr, token_code *code)
 {
     while (**ptr == ' ') ++(*ptr);
@@ -218,7 +100,8 @@ int read_token(const char **ptr, token_code *code)
         if (strcmpr(*ptr, tokens[i], tokens_len[i]))
         {
             *code = i;
-            (*ptr) += tokens_len[i];
+            if (!is_digit(*code))
+                (*ptr) += tokens_len[i];
             return 1;
         }
     }
@@ -227,14 +110,14 @@ int read_token(const char **ptr, token_code *code)
 
 int is_operand(token_code code)
 {
-    if (code <= 3) return 1;
-    return 0;
+    if (code <= 3) return TRUE;
+    return FALSE;
 }
 
 int is_func(token_code code)
 {
-    if (code == GCD || code == LCM) return 1;
-    return 0;
+    if (code == GCD || code == LCM) return TRUE;
+    return FALSE;
 }
 
 int tok_to_output(token_code code, char **out)
@@ -246,22 +129,145 @@ int tok_to_output(token_code code, char **out)
     return 1;
 }
 
-char *inftoRPN(const char *infix)
+size_t get_num_len(const char *str)
 {
+    char *end = NULL;
+    long num = strtol(str, &end, 0);
+    if (!num)
+    {
+        if (*str == '0')
+            return 1;
+        return 0;
+    }
+    return end - str;
+}
+
+void num_to_output(char **dst, const char **src, size_t len)
+{
+    memcpy(*dst, *src, len);
+    *dst += len;
+    *((*dst)++) = ' ';
+    *src += len;
+    return;
+}
+
+typedef struct error
+{
+    int code;
+    char *ptr;
+    char *message;
+} error;
+
+error *error_init()
+{
+    error *res = malloc(sizeof(error));
+    res->code = 0;
+    res->ptr = NULL;
+    res->message = NULL;
+    return res;
+}
+
+void error_set(error *err, int code, char *message, const char *ptr)
+{
+    err->code = code;
+    --ptr;
+    err->message = message;
+    size_t len = strlen(ptr) < 50 ? strlen(ptr) : 50;
+    err->ptr = malloc(len + 8);
+    memcpy(err->ptr, ptr, len);
+    err->ptr[len] = '\n';
+    for (size_t i = 1; i < 6; i++)
+        err->ptr[len + i] = ' ';
+    
+    err->ptr[len + 6] = '^';
+    err->ptr[len + 7] = '\0';
+    return;
+}
+
+void error_print(error *err)
+{
+    puts("____ ERRORS ____");
+    printf("code: %d\nmessage: %s\nstr: %.60s\n", err->code, err->message, err->ptr);
+    puts("________________");
+    return;
+}
+
+int calc_RPN(const char *str, error *err)
+{
+    if (!*str || !str) return 0;
+    stack *s = NULL;
+    token_code curr_tok;
+    int num;
+    char *end = NULL;
+    int tmp1, tmp2;
+    while (*str)
+    {
+        while (*str == ' ')
+        {
+            ++str;
+            continue;
+        }
+        num = strtol(str, &end, 0);
+        if (str != end)
+        {
+            stack_push(&s, num);
+            str = end;
+        }
+        else if (!read_token(&str, &curr_tok))
+        {
+            error_set(err, INCORRECT_INPUT, "Read token error.", str);
+            return 0;
+        }
+        else if (is_operand(curr_tok) || is_func(curr_tok))
+        {
+            if (!s || !s->next)
+            {
+                error_set(err, INCORRECT_INPUT, "Wrong input. Less args for function or operator.", str);
+                return 0;
+            }
+            tmp1 = stack_pop(&s);
+            tmp2 = stack_pop(&s);
+            if (curr_tok == ADD) stack_push(&s, tmp2 + tmp1);
+            else if (curr_tok == SUB) stack_push(&s, tmp2 - tmp1);
+            else if (curr_tok == MUL) stack_push(&s, tmp2 * tmp1);
+            else if (curr_tok == DIV) stack_push(&s, tmp2 / tmp1);
+            else if (curr_tok == GCD) stack_push(&s, gcd(tmp1, tmp2));
+            else if (curr_tok == LCM) stack_push(&s, lcm(tmp1, tmp2));
+        }
+        else 
+        {
+            error_set(err, UNKNOWN_ERROR, "Unknown error.", str);
+            return 0;
+        }
+    }
+    int result = s->value;
+    stack_free(s);
+    
+    return result;
+}
+
+
+char *inftoRPN(const char *infix, error *err)
+{
+    if (!err)
+    {
+        puts("Err is NULL");
+        return NULL;
+    }    
     if (!infix)
     {
-        puts("Error, arg inftoRPN is NULL.");
+        error_set(err, EMPTY_PTR, "Error, arg inftoRPN is NULL.", NULL);
         return NULL;
     }
-
-    char *result = malloc(strlen(infix) + 1);
+    char *result = malloc(strlen(infix) * 2 + 1);
     char *resptr = result;
     stack *stok = NULL;
     token_code curTok;
-    int state = 0;
-    int num = 0;
-    char *end = NULL;
-    //int opBrackCount = 0;
+    int state = 2;
+    int brk_count = 0;
+    
+    size_t num_len = 0;
+
     while (*infix)
     {
         if (*infix == ' ')
@@ -269,31 +275,16 @@ char *inftoRPN(const char *infix)
             ++infix;
             continue;
         }
-        if (state == 0)
+        if (!read_token((const char **)(&infix), &curTok))
         {
-            num = strtol(infix, &end, 0);
-            if (!num && (*infix) != '0')
-            {
-                state = 1;
-                continue;
-            }
-            memcpy(resptr, infix, end - infix);
-            resptr += end - infix;
-            infix = end;
-            *(resptr++) = ' ';
-            state = 1;
-            continue;
+            error_set(err, INCORRECT_INPUT, "Error, expected token.", infix);
+            return NULL;
         }
         if (state == 1)
         {
-            if (!read_token((const char **)(&infix), &curTok))
-            {
-                puts("Error, expected token.");
-                return NULL;
-            }
             if (is_operand(curTok))
             {
-                state = 0;
+                state = 2;
                 if (!stok) 
                 {
                     stack_push(&stok, curTok);
@@ -313,56 +304,129 @@ char *inftoRPN(const char *infix)
                 stack_push(&stok, curTok);
                 continue;
             }
-            if (curTok == OP_BRK)
-            {
-                stack_push(&stok, OP_BRK);
-                state = 0;
-                continue;
-            }
             if (curTok == CL_BRK)
             {
-                token_code lastTok = stack_pop(&stok);
+                state = 1;
+                --brk_count;
+                if (brk_count < 0)
+                {
+                    error_set(err, INCORRECT_INPUT, "Too much cl_brk.", infix);
+                    return NULL;
+                }
+                int lastTok = stack_pop(&stok);
                 while (lastTok != OP_BRK)
                 {
                     tok_to_output(lastTok, &resptr);
                     lastTok = stack_pop(&stok);
+                    
                 }
                 if (!stok) continue;
                 lastTok = stack_pop(&stok);
                 if (is_func(lastTok))
                 {
                     tok_to_output(lastTok, &resptr);
-                    state = 0;
                     continue;
                 }
                 stack_push(&stok, lastTok);
-                state = 1;
-                continue;
-            }
-            if (is_func(curTok))
-            {
-                stack_push(&stok, curTok);
                 continue;
             }
             if (curTok == COMMA)
             {
-
                 token_code lastTok = stack_pop(&stok);
                 while (lastTok != OP_BRK)
                 {
                     tok_to_output(lastTok, &resptr);
                     lastTok = stack_pop(&stok);
                 }
+                token_code tmp = stack_pop(&stok);
+                if (!is_func(tmp))
+                {
+                    error_set(err, INCORRECT_INPUT, "Comma used incorrect.", infix);
+                    return NULL;
+                }
+                stack_push(&stok, tmp);
                 stack_push(&stok, lastTok);
-                state = 0;
+                state = 2;
+                continue;
+            }
+        }
+        if (state == 2)
+        {
+            if (curTok == OP_BRK)
+            {
+                ++brk_count;
+                stack_push(&stok, OP_BRK);
+                continue;
+            }
+            if (is_func(curTok))
+            {
+                state = 3;
+                stack_push(&stok, curTok);
+                continue;
+            }
+            if (curTok == ADD || curTok == SUB)
+            {
+                --infix;
+                num_len = get_num_len(infix);
+                if (num_len)
+                {
+                    num_to_output(&resptr, &infix, num_len);
+                    state = 1;
+                    continue;
+                }
+                else
+                {
+                    error_set(err, INCORRECT_INPUT, "Incorrect input. Expected unary + or -", infix);
+                    return NULL;
+                }
+            }
+            if (is_digit(curTok))
+            {
+                num_len = get_num_len(infix);
+                if (num_len)
+                {
+                    num_to_output(&resptr, &infix, num_len);
+                    state = 1;
+                    continue;
+                }
+                else
+                {
+                    error_set(err, INCORRECT_INPUT, "Unknown error. State 2", infix);
+                    return NULL;
+                }
+            }
+            else
+            {
+                error_set(err, INCORRECT_INPUT, "Wrong input. Expected op_brk || func || number", infix);
+                return NULL;
+            }
+        }
+        if (state == 3)
+        {
+            if (curTok == OP_BRK)
+            {
+                ++brk_count;
+                stack_push(&stok, OP_BRK);
+                state = 2;
                 continue;
             }
             else
             {
-                puts("Unknown error.");
+                error_set(err, INCORRECT_INPUT, "Wrong input. Expected op_brk after function.", infix);
                 return NULL;
             }
         }
+        else
+        {
+            error_set(err, INCORRECT_INPUT, "Unknown error.", infix);
+            return NULL;
+        }
+
+    }
+    if (brk_count != 0)
+    {
+        error_set(err, INCORRECT_INPUT, "Less cl_brk.", infix);
+        return NULL;
     }
     while (stok)
     {
@@ -371,36 +435,40 @@ char *inftoRPN(const char *infix)
     }
     resptr--;
     *resptr = '\0';
-    //result = realloc(result, resptr - result + 1);
+    result = realloc(result, resptr - result + 1);
     return result;
 }
 
-void test()
-{
-    char s[] = "1 3 + 2 4 - * 18 + 15 gcd 25 lcm";
-    int res = calc_RPN(s);
-    printf("%d", res);
-}
+
+
+// void test()
+// {
+//     char s[] = "1 3 + 2 4 - * 18 + 15 gcd 21 lcm";
+//     int res = calc_RPN(s);
+//     printf("%d", res);
+// }
 
 void test2()
 {
     //char s[] = "2 * (3 + 4) - (6 + 4) / 2";
-    char s[] = "lcm(8 * 3, 4 * 3) + 2 - 2*(gcd(10, 3*5) + lcm(5, (3-2)))";
+    char s[] = "lcm(8 * 3, 4 * 3)()) - (-1) + 2 - 2*(gcd(10, 3*5) + lcm(5, (3-2)))";
     //char s[] = "1+2*gcd(3,2+4)*(5-1)";
     
-    char *res = inftoRPN(s);
+    error *err = error_init();
+
+    char *res = inftoRPN(s, err);
+    error_print(err);
     if (!res)
     {
         return;
     }
     puts(res);
-    int res2 = calc_RPN(res);
-    printf("%d", res2);
+    int res2 = calc_RPN(res, err);
+    printf("result: %d", res2);
 }
 
 int main()
 {
-    //char s[] = "1+2*gcd(3,2+4)*(5-1)";
     //test();
     test2();
     return 0;
