@@ -168,16 +168,13 @@ unsigned char *sb_number(double r, sbt *tree)
     }
     *pRes = '\0';
     result = realloc(result, pRes - result + 1);
-    //printf("\n%f ~ %d/%d\n", (double)curr->num / curr->den, curr->num, curr->den);
     return result;
 }
 
-int main()
+void test_sbt()
 {
-    //sort_test(sort_bin_tree);
     sbt *tree = get_sbt(APPROX);
-    printf("%s\n", sb_number(M_PI, tree));//APPROX));
-    printf("%s\n", sb_number(M_FI, tree));//APPROX));
-    printf("%s\n", sb_number(M_E, tree));//APPROX));
-    return 0;
+    printf("%s\n", sb_number(M_PI, tree));
+    printf("%s\n", sb_number(M_FI, tree));
+    printf("%s\n", sb_number(M_E, tree));
 }
