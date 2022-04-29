@@ -1,6 +1,11 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "structlib.h"
+#include "Windows.h"
+
+#ifndef min
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
 
 #define SCAN_ERR -5
 #define CLOSE_ERR -4
@@ -20,6 +25,9 @@ typedef struct graph
     int ver_num;
     list **adj_list;
 } graph;
+
+
+
 
 graph *graph_init(int n)
 {
@@ -264,6 +272,7 @@ int is_biparted(graph *g, int **part)
     return SUCCEED;
 }
 
+
 int topological_sort(graph* g, int** result)
 {
     if (g == NULL) return EMPTY_PTR;
@@ -307,6 +316,7 @@ int topological_sort(graph* g, int** result)
     return SUCCEED;
 }
 
+
 int graph_write(graph *g, const char *path)
 {
     if (g == NULL) return EMPTY_PTR;
@@ -349,6 +359,7 @@ int graph_read(graph **g, const char *path)
     return SUCCEED;
 }
 
+
 graph *get_inverted(graph *g)
 {
     graph *result = graph_init(g->ver_num);
@@ -365,10 +376,6 @@ graph *get_inverted(graph *g)
     return result;
 }
 
-int min(int a, int b)
-{
-    return a < b ? a : b;
-}
 
 void arr_print(int *arr, int size)
 {
@@ -381,164 +388,64 @@ void arr_print(int *arr, int size)
 }
 
 
-// рабочий вариант.
-// void SCC_dfs(graph *g, int vertex, int *in_time, int *component, stack **s, int *curr_comp, int *time, int *min_out, int *is_in_stack)
-// {
-//     stack_push(s, vertex);
-//     is_in_stack[vertex] = 1;
-//     component[vertex] = *curr_comp;
-//     min_out[vertex] = *time;
-//     in_time[vertex] = (*time)++;
-//     node *adj_ver = g->adj_list[vertex]->head;
-//     while (adj_ver)
-//     {
-//         if (!component[adj_ver->info])
-//         {
-//             SCC_dfs(g, adj_ver->info, in_time, component, s, curr_comp, time, min_out, is_in_stack);
-//             min_out[vertex] = min(min_out[vertex], min_out[adj_ver->info]);
-//         }
-//         else if (is_in_stack[adj_ver->info])
-//         {
-//             min_out[vertex] = min(min_out[vertex], in_time[adj_ver->info]);
-//         }
-//         adj_ver = adj_ver->next;
-//     }
-//     if (min_out[vertex] == in_time[vertex])
-//     {
-//         int tmp;
-//         do
-//         {
-//             tmp = stack_pop(s);
-//             is_in_stack[tmp] = 0;
-//             component[tmp] = *curr_comp;
-//         }
-//         while (tmp != vertex);
-//         ++(*curr_comp);
-//     }
-// }
-
-// int *SCC_decomposition(graph *g)
-// {
-//     int *in_time = malloc(g->ver_num * sizeof(int));
-//     int *component = calloc(g->ver_num, sizeof(int));
-//     int *min_out = malloc(g->ver_num * sizeof(int));
-//     int *is_in_stack = calloc(g->ver_num, sizeof(int));
-//     int curr_comp = 1;
-//     int time = 1;
-//     stack *s = NULL;
-//     for (int i = 0; i < g->ver_num; i++)
-//     {
-//         if (!component[i])
-//             SCC_dfs(g, i, in_time, component, &s, &curr_comp, &time, min_out, is_in_stack);
-//     }
-//     return component;
-// }
-
-void SCC_dfs(graph *g, int vertex, int *in_time, int *component, stack **s, 
-                int *curr_comp, int *time, int *min_out, int *is_in_stack)
+void SCC2_dfs(graph *g, int start_ver, int *component, int *curr_comp)
 {
-    stack_push(s, vertex);
-    is_in_stack[vertex] = 1;
-    component[vertex] = *curr_comp;
-    min_out[vertex] = *time;
-    in_time[vertex] = (*time)++;
-    node *adj_ver = g->adj_list[vertex]->head;
-    while (adj_ver)
-    {
-        if (!component[adj_ver->info])
-        {
-            SCC_dfs(g, adj_ver->info, in_time, component, s, curr_comp, time, min_out, is_in_stack);
-            min_out[vertex] = min(min_out[vertex], min_out[adj_ver->info]);
-        }
-        else if (is_in_stack[adj_ver->info])
-        {
-            min_out[vertex] = min(min_out[vertex], in_time[adj_ver->info]);
-        }
-        adj_ver = adj_ver->next;
-    }
-    if (min_out[vertex] == in_time[vertex])
-    {
-        int tmp;
-        do
-        {
-            tmp = stack_pop(s);
-            is_in_stack[tmp] = 0;
-            component[tmp] = *curr_comp;
-        }
-        while (tmp != vertex);
-        ++(*curr_comp);
-    }
-}
-
-void SCC_dfs2(graph *g, int ver, int *visited, int *in_time, int *time)
-{
-    stack *s = stack_init(ver);
-    in_time[ver] = *time;
-    int curr_ver;
-    node *curr_adj = NULL;
+    stack *s = stack_init(start_ver);
+    stack *s2 = stack_init(start_ver);
+    int time = 1;
+    int *in_time = malloc(g->ver_num * sizeof(int));
+    int *min_out = malloc(g->ver_num * sizeof(int));
+    in_time[start_ver] = time;
+    min_out[start_ver] = time++;
+    int curr;
+    node *adj_ver = NULL;
     while (s)
     {
-        curr_ver = stack_pop(&s);
-        visited[curr_ver] = 1;
-        in_time[curr_ver] = (*time)++;
-        curr_adj = g->adj_list[curr_ver]->head;
-        // while (curr_adj)
-        // {
-        //     if (visited[curr_adj->info] == 1)
-        //     {
-        //         in_time[curr_ver] = min(in_time[curr_ver], in_time[curr_adj->info]);
-        //     }
-        //     curr_adj = curr_adj->next;
-        // }
-        
-        while (curr_adj && visited[curr_adj->info])
+        curr = stack_pop(&s);
+        component[curr] = -1;
+        adj_ver = g->adj_list[curr]->head;
+        while (adj_ver && component[adj_ver->info] != 0)
         {
-            if (visited[curr_adj->info] == 1)
-            {
-                in_time[curr_ver] = min(in_time[curr_ver], in_time[curr_adj->info]);
-            }
-            curr_adj = curr_adj->next;
+            if (component[adj_ver->info] == -1)
+                min_out[curr] = min(min_out[curr], min_out[adj_ver->info]);
+            adj_ver = adj_ver->next;
         }
-        if (curr_adj == NULL)
+        if (adj_ver == NULL)
         {
-            visited[curr_ver] = 2;
+            if (min_out[curr] == in_time[curr])
+            {
+                int tmp;
+                do
+                {
+                    tmp = stack_pop(&s2);
+                    component[tmp] = *curr_comp;
+                }
+                while (tmp != curr);
+                ++(*curr_comp);
+            }
         }
         else
         {
-            stack_push(&s, curr_adj->info);
-        }
+            stack_push(&s, curr);
+            stack_push(&s, adj_ver->info);
+            in_time[adj_ver->info] = time;
+            min_out[adj_ver->info] = time++;
+            stack_push(&s2, adj_ver->info);
+        }   
     }
 }
 
-int *SCC_decomposition(graph *g)
+int *SCC2_decomposition(graph *g)
 {
-    int *in_time = malloc(g->ver_num * sizeof(int));
     int *component = calloc(g->ver_num, sizeof(int));
-    int *min_out = malloc(g->ver_num * sizeof(int));
-    int *is_in_stack = calloc(g->ver_num, sizeof(int));
     int curr_comp = 1;
-    int time = 1;
-    stack *s = NULL;
     for (int i = 0; i < g->ver_num; i++)
     {
         if (!component[i])
-            SCC_dfs(g, i, in_time, component, &s, &curr_comp, &time, min_out, is_in_stack);
+            SCC2_dfs(g, i, component, &curr_comp);
     }
     return component;
 }
-
-// int *SCC_decomposition(graph *g)
-// {
-//     int *in_time = malloc(g->ver_num * sizeof(int));
-//     int *visited = calloc(g->ver_num, sizeof(int));
-//     int time = 1;
-//     for (int i = 0; i < g->ver_num; i++)
-//     {
-//         if (!visited[i])
-//             SCC_dfs2(g, i, visited, in_time, &time);
-//     }
-//     return in_time;
-// }
 
 
 void SCC1_dfs1(graph *g, int *visited, int *out_time, int *time, int start_ver)
@@ -567,7 +474,7 @@ void SCC1_dfs1(graph *g, int *visited, int *out_time, int *time, int start_ver)
     }
 }
 
-void SCC1_dfs2(graph *gi, int start_ver, int *visited, int *out_time, int *time)
+void SCC1_dfs2(graph *gi, int start_ver, int *visited, int *result, int *time)
 {
     stack *s = stack_init(start_ver);
     node *adj_ver = NULL;
@@ -583,7 +490,7 @@ void SCC1_dfs2(graph *gi, int start_ver, int *visited, int *out_time, int *time)
         }
         if (adj_ver == NULL)
         {
-            out_time[curr] = *time;
+            result[curr] = *time;
         }
         else
         {
@@ -604,18 +511,119 @@ int *SCC1_decomposition(graph *g)
         if (!visited[i])
             SCC1_dfs1(g, visited, out_time, &time, i);
     }
-    time = 0;
-    arr_print(out_time, g->ver_num);
+    time = 1;
     graph *gi = get_inverted(g);
+    int *result = malloc(sizeof(int) * g->ver_num);
     for (int i = g->ver_num - 1; i >=0; --i)
     {
         if (visited[out_time[i]] != 2)
-            SCC1_dfs2(gi, out_time[i], visited, out_time, &time);
+            SCC1_dfs2(gi, out_time[i], visited, result, &time);
     }
     free(visited);
+    free(out_time);
     graph_free(&gi);
-    return out_time;
+    return result;
 }
+
+void SCC1_dfs2_topsort(graph *gi, int start_ver, int *visited, int *result, int *time, int *topsorted, int *ind)
+{
+    stack *s = stack_init(start_ver);
+    node *adj_ver = NULL;
+    int curr;
+    while (s)
+    {
+        curr = stack_pop(&s);
+        visited[curr] = 2;
+        adj_ver = gi->adj_list[curr]->head;
+        while (adj_ver && visited[adj_ver->info] == 2)
+        {
+            adj_ver = adj_ver->next;
+        }
+        if (adj_ver == NULL)
+        {
+            result[curr] = *time;
+            topsorted[(*ind)++] = curr;
+        }
+        else
+        {
+            stack_push(&s, curr);
+            stack_push(&s, adj_ver->info);
+        }
+    }
+    ++(*time);
+}
+
+int *SCC1_decomposition_topsort(graph *g, int **topsorted)
+{
+    int *visited = calloc(g->ver_num, sizeof(int));
+    int *out_time = calloc(g->ver_num, sizeof(int));
+    int time = 0;
+    for (int i = 0; i < g->ver_num; i++)
+    {
+        if (!visited[i])
+            SCC1_dfs1(g, visited, out_time, &time, i);
+    }
+    time = 1;
+    graph *gi = get_inverted(g);
+    int *result = malloc(sizeof(int) * g->ver_num);
+    int ind = 0;
+    *topsorted = malloc(sizeof(int) * g->ver_num);
+    for (int i = g->ver_num - 1; i >=0; --i)
+    {
+        if (visited[out_time[i]] != 2)
+            SCC1_dfs2_topsort(gi, out_time[i], visited, result, &time, *topsorted, &ind);
+    }
+    free(visited);
+    free(out_time);
+    graph_free(&gi);
+    return result;
+}
+
+
+// input: [1, -2, -1, 2] = [(x | !y) ^ (!x | y)]
+// n variables = [1, ..., n, n+1 (= !1), n+2, ..., 2n (= !n)] 
+int *SAT_2(int var_num, int *expr, int len)
+{
+    // len = number of paired brackets
+    graph *g = graph_init(var_num * 2);
+    for (int i = 0; i < 2 * len; i += 2)
+    {
+        // if expr[i] == 0 retrun ERROR;
+        int a = expr[i] < 0 ? -expr[i] + var_num : expr[i];
+        int b = expr[i + 1] < 0 ? -expr[i + 1] + var_num : expr[i + 1];
+        int na = expr[i] < 0 ? -expr[i] : expr[i] + var_num;
+        int nb = expr[i + 1] < 0 ? -expr[i + 1] : expr[i + 1] + var_num;
+        add_arc(g, na - 1, b - 1);
+        add_arc(g, nb - 1, a - 1);
+    }
+    int *topsorted = NULL;
+    int *decomp = SCC1_decomposition_topsort(g, &topsorted);
+    graph_free(&g);
+
+    // checking for invalid expression.
+    for (int i = 0; i < var_num; i++)
+    {
+        if (decomp[i] == decomp[i + var_num])
+            return NULL;
+    }
+    int *result = malloc(sizeof(int) * var_num);
+    for (int i = 0; i < var_num; i++) result[i] = -1; // not visited
+    
+    for (int i = var_num * 2 - 1; i >= 0; i--)
+    {
+        int ind = topsorted[i];
+        int is_inverse = 0;
+        if (topsorted[i] >= var_num)
+        {
+            is_inverse = 1;
+            ind = topsorted[i] - var_num;
+        }
+        if (result[ind] == -1)
+            result[ind] = is_inverse ? 0 : 1;
+    }
+    return result;
+}
+
 
 void test_graph()
 {
@@ -666,13 +674,12 @@ void test_is_biparted()
 
 void test_top_sort()
 {
-    graph *g;
-    graph_read(&g, "gr.txt");/*graph_init(5);
+    graph *g = graph_init(5);
     add_arc(g, 4, 1);
     add_arc(g, 1, 2);
     add_arc(g, 4, 3);
     add_arc(g, 3, 2);
-    add_arc(g, 0, 4);*/
+    add_arc(g, 0, 4);
     graph_print(g);
     
     int *result = NULL;
@@ -706,6 +713,17 @@ void file_test()
     printf("write status: %d\n", graph_write(res, "gr1.txt"));
 }
 
+void write_graph_test()
+{
+    graph *g = graph_init(6);
+    add_arc(g, 1, 5);
+    add_arc(g, 5, 0);
+    add_arc(g, 5, 2);
+    add_arc(g, 2, 1);
+    add_arc(g, 4, 2);
+    graph_write(g, "gr1.txt");
+}
+
 void SCC_test()
 {
     graph *g = graph_init(4);
@@ -713,36 +731,74 @@ void SCC_test()
     add_edge(g, 1, 2);
     add_arc(g, 1, 3);
     add_arc(g, 3, 2);
-    int *components = SCC_decomposition(g);
+    int *components = SCC1_decomposition(g);
     arr_print(components, 4);
-}
-
-void SCC_test2()
-{
-    graph *g = graph_init(6);
-    add_arc(g, 1, 3);
-    add_arc(g, 3, 0);
-    add_arc(g, 3, 2);
-    add_arc(g, 2, 1);
-    add_arc(g, 4, 2);
-    int *components = SCC_decomposition(g);
-    arr_print(components, 6);
 }
 
 void SCC1_test()
 {
     graph *g = graph_init(6);
-    add_arc(g, 1, 3);
-    add_arc(g, 3, 0);
-    add_arc(g, 3, 2);
+    add_arc(g, 1, 5);
+    add_arc(g, 5, 0);
+    add_arc(g, 5, 2);
     add_arc(g, 2, 1);
     add_arc(g, 4, 2);
-    int *components = SCC_decomposition(g);
+    int *components = SCC1_decomposition(g);
     arr_print(components, 6);
+}
+
+void SCC1_topsort_test()
+{
+    graph *g = graph_init(6);
+    add_arc(g, 1, 5);
+    add_arc(g, 5, 0);
+    add_arc(g, 5, 2);
+    add_arc(g, 2, 1);
+    add_arc(g, 4, 2);
+    int *topsorted = NULL;
+    int *components = SCC1_decomposition_topsort(g, &topsorted);
+    arr_print(components, 6);
+    arr_print(topsorted, 6);
+}
+
+void SCC2_test()
+{
+    graph *g = graph_init(6);
+    add_arc(g, 1, 5);
+    add_arc(g, 5, 0);
+    add_arc(g, 5, 2);
+    add_arc(g, 2, 1);
+    add_arc(g, 4, 2);
+    int *components = SCC2_decomposition(g);
+    arr_print(components, 6);
+}
+
+void SCC2_test2()
+{
+    graph *g = graph_init(6);
+    add_edge(g, 4, 3);
+    add_edge(g, 3, 2);
+    add_arc(g, 0, 5);
+    add_arc(g, 5, 1);
+    add_arc(g, 1, 0);
+    int *components = SCC2_decomposition(g);
+    arr_print(components, 6);
+}
+
+void SAT_2_test()
+{
+    int expr[] = {1, 2, -2, -1};//{1, -2, 2, 3, -2, -3, -1, 3, 2, -1};
+    int *res = SAT_2(2, expr, 2);
+    arr_print(res, 2);
+}
+
+void DFA_test()
+{
+    printf("%d", DFA(13));
 }
 
 int main()
 {
-    SCC1_test();
+    DFA_test();
     return 0;
 }
