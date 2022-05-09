@@ -27,8 +27,6 @@ typedef struct graph
 } graph;
 
 
-
-
 graph *graph_init(int n)
 {
     graph *result = malloc(sizeof(graph));
@@ -152,41 +150,6 @@ int get_uncolored(int *colors, int size)
     }
     return -1;
 }
-
-// int is_biparted_DFS(graph *g, int **part)
-// {
-//     if (g == NULL) return EMPTY_PTR;
-//     if (g->ver_num <= 0) return FALSE;
-//     int *color = calloc(g->ver_num, sizeof(int));
-//     node *ver;
-//     int curr;
-//     while (1)
-//     {
-//         int col = get_uncolored(color, g->ver_num);
-//         if (col == -1) break;
-//         color[col] = 1;
-//         stack *vertices = stack_init(col);
-//         while (vertices)
-//         {
-//             curr = stack_pop(&vertices);
-//             ver = g->adj_list[curr]->head;
-//             while (ver && color[ver->info])
-//             {
-//                 if (color[ver->info] == color[curr])
-//                     return FALSE;
-//                 ver = ver->next;
-//             }
-//             if (ver)
-//             {
-//                 color[ver->info] = -color[curr];
-//                 stack_push(&vertices, curr);
-//                 stack_push(&vertices, ver->info);
-//             }
-//         }
-//     }
-//     *part = color;
-//     return TRUE;
-// }
 
 int is_biparted_DFS(graph *g, int *color, int ind)
 {
@@ -790,15 +753,4 @@ void SAT_2_test()
     int expr[] = {1, 2, -2, -1};//{1, -2, 2, 3, -2, -3, -1, 3, 2, -1};
     int *res = SAT_2(2, expr, 2);
     arr_print(res, 2);
-}
-
-void DFA_test()
-{
-    printf("%d", DFA(13));
-}
-
-int main()
-{
-    DFA_test();
-    return 0;
 }
