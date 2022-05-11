@@ -39,9 +39,9 @@ int lcm(int a, int b)
 }
 
 
-//const char *operands[OPER_COUNT] = {"+", "-", "*", "/"};
-static const int opPriority[OPER_COUNT] = {1, 1, 2, 2};
-// Operands always must go ahead.
+
+static const int op_priority[OPER_COUNT] = {1, 1, 2, 2};
+/* Operators always must go ahead */
 static const char *tokens[TOKENS_COUNT] = {
     "+", "-", "*", "/", "gcd", "lcm", "(", ")", ",",
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
@@ -293,7 +293,7 @@ char *inftoRPN(const char *infix, error *err)
                 token_code lastTok = stack_pop(&stok);
                 if (is_operand(lastTok))
                 {
-                    if (opPriority[curTok] <= opPriority[lastTok])
+                    if (op_priority[curTok] <= op_priority[lastTok])
                     {
                         tok_to_output(lastTok, &resptr);
                         stack_push(&stok, curTok);
