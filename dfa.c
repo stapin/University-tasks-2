@@ -1,61 +1,23 @@
 #include "stdio.h"
 #include "stdlib.h"
-
-/* _________ VERTEX STATUS _________ */
-
-#define INIT 0
-#define INTER 1
-#define FINAL 2
-#define INIT_FINAL 3
-#define BROKEN 4
-
-/* __________________________________ */
-
-#define NO_ARC -1
+#include "dfa.h"
 
 
-#ifndef STRUCTLIB_H
-
-#define STACK_EMPTY (-5)
-#define QUEUE_EMPTY (-4)
-#define NO_SUCH_ELEMENT (-3)
-#define INCORRECT_ARG (-2)
-#define WRONG_INPUT (-1)
-#define UNKNOWN_ERROR 0
-#define SUCCEED 1
-#define FALSE 0
-#define TRUE 1
-#endif
-
-
-typedef struct state
-{
-    int ver_status;
-    int adj_0;
-    int adj_1;
-} state;
-
-
-typedef struct dfa
-{
-    int state_num;
-    state **adj_list;
-} dfa;
 
 int add_arc_0(dfa *g, int a, int b)
 {
     if (!g) return 0;
-    if (g->state_num < a || a < 0 || b < 0 || g->state_num < b) return WRONG_INPUT;
+    if (g->state_num < a || a < 0 || b < 0 || g->state_num < b) return 0;
     g->adj_list[a]->adj_0 = b;
-    return SUCCEED;
+    return 1;
 }
 
 int add_arc_1(dfa *g, int a, int b)
 {
     if (!g) return 0;
-    if (g->state_num < a || a < 0 || b < 0 || g->state_num < b) return WRONG_INPUT;
+    if (g->state_num < a || a < 0 || b < 0 || g->state_num < b) return 0;
     g->adj_list[a]->adj_1 = b;
-    return SUCCEED;
+    return 1;
 }
 
 void dfa_free(dfa *a)
@@ -71,8 +33,8 @@ void dfa_free(dfa *a)
 
 int dfa_check(dfa *a, int x)
 {
-    int cur_state = INIT;
-    int cur_status = INIT;
+    int cur_state = INTER;
+    int cur_status = INTER;
     while (x && cur_status != BROKEN)
     {
         if (x & 1)
@@ -87,7 +49,7 @@ int dfa_check(dfa *a, int x)
         }
         x >>= 1;
     }
-    if (cur_status == FINAL || cur_status == INIT_FINAL)
+    if (cur_status == FINAL)
         return TRUE;
     return FALSE;
 }
@@ -96,7 +58,7 @@ int dfa_check(dfa *a, int x)
 void dfa_print(dfa *a, int n)
 {
     printf("[");
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i <= n; i++)
     {
         if (dfa_check(a, i))
             printf("%d ", i);
@@ -223,10 +185,6 @@ dfa *dfa_complement(dfa* a)
             curr->ver_status = FINAL;
         else if (curr2->ver_status == FINAL && curr2->adj_0 == i && curr2->adj_1 == i)
             curr->ver_status = BROKEN;
-        else if (curr2->ver_status == INIT)
-            curr->ver_status = INIT_FINAL;
-        else if (curr2->ver_status == INIT_FINAL)
-            curr->ver_status = INIT;
         else
             curr->ver_status = INTER;
          
@@ -316,11 +274,11 @@ dfa *dfa_difference(dfa *a1, dfa *a2)
         {
             res->adj_list[i * n + j] = malloc(sizeof(state));
 
-            if ((j1[i]->ver_status == FINAL) ^ (j2[j]->ver_status == FINAL))
+            if ((j1[i]->ver_status == FINAL) && (j2[j]->ver_status != FINAL))
             {
                 res->adj_list[i * n + j]->ver_status = FINAL;
             }
-            else if ((j1[i]->ver_status == BROKEN) ^ (j2[j]->ver_status == BROKEN))
+            else if ((j1[i]->ver_status == BROKEN))
             {
                 res->adj_list[i * n + j]->ver_status = BROKEN;
             }
@@ -362,16 +320,30 @@ void dfa_test()
     dfa *inter = dfa_intersection(l2, idfa);
     dfa_print(inter, 20);
 
-    dfa *uni = dfa_union(l2, idfa);
+    dfa *idfa_8 = int_dfa(8);
+
+    dfa *uni = dfa_union(l2, idfa_8);
     dfa_print(uni, 20);
 
-    dfa *diff = dfa_difference(idfa, l2);
+    dfa *diff = dfa_difference(l2, idfa);
     dfa_print(diff, 20);
 }
 
-
-int main()
+void dfa_test2()
 {
-    dfa_test();
-    return 0;
+    dfa *i5 = int_dfa(5);
+    dfa *i7 = int_dfa(8);
+    dfa *l2 = L2_init();
+
+    dfa *r1 = dfa_union(i5, i7);
+    dfa *r2 = dfa_union(r1, l2);
+    dfa_print(r2, 20);
+
 }
+
+
+/* int main()
+{
+    dfa_test2();
+    return 0;
+} */
