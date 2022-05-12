@@ -49,6 +49,18 @@ int dfa_check(dfa *a, int x)
         }
         x >>= 1;
     }
+    // --
+    // if (cur_status != FINAL)
+    // {
+    //     for (int i = 0; i < a->state_num; i++)
+    //     {
+    //         cur_state = a->adj_list[cur_state]->adj_0;
+    //         cur_status = a->adj_list[cur_state]->ver_status;
+    //         if (cur_status == FINAL)
+    //             return TRUE;
+    //     }  
+    // }
+    // --
     if (cur_status == FINAL)
         return TRUE;
     return FALSE;
@@ -98,10 +110,12 @@ dfa *int_dfa(int x)
     }
     res->adj_list[0]->ver_status = INTER;
     res->adj_list[res->state_num - 2]->ver_status = FINAL;
+    add_arc_0(res, res->state_num - 2, res->state_num - 2);
     res->adj_list[res->state_num - 1]->ver_status = BROKEN;
-    res->adj_list[res->state_num - 1]->adj_0 = res->state_num - 1;
-    res->adj_list[res->state_num - 1]->adj_1 = res->state_num - 1;
-    
+    //res->adj_list[res->state_num - 1]->adj_0 = res->state_num - 1;
+    //res->adj_list[res->state_num - 1]->adj_1 = res->state_num - 1;
+    add_arc_0(res, res->state_num - 1, res->state_num - 1);
+    add_arc_1(res, res->state_num - 1, res->state_num - 1);
     return res;
 }
 
@@ -344,6 +358,6 @@ void dfa_test2()
 
 /* int main()
 {
-    dfa_test2();
+    dfa_test();
     return 0;
 } */

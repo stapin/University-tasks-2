@@ -472,7 +472,6 @@ dfa *dfa_calc_rpn(const char *str, dfa_id **list, int list_len, error *err)
         if (curr_tok->type == IDENTIFIER)
         {
             int ind;
-            //printf("%s\n", list[0]->str);
             if (is_in_list(curr_tok, list, list_len, &ind))
             {
                 stack_push(s, list[ind]->a);
@@ -534,17 +533,7 @@ dfa *dfa_calc_rpn(const char *str, dfa_id **list, int list_len, error *err)
 dfa *dfa_calc_str(const char *str, dfa_id **id_list, int list_len, error *err)
 {
     char *rpn = dfa_inf_to_rpn(str, err);
-    if (rpn == NULL)
-    {
-        error_print(err);
-        return NULL;
-    }
     dfa *result = dfa_calc_rpn(rpn, id_list, list_len, err);
-    if (result == NULL)
-    {
-        error_print(err);
-        return NULL;
-    }
     return result;
 }
 
@@ -610,7 +599,7 @@ dfa_id *dfa_parse_string(const char *str, int *code, error *err, dfa_id **id_lis
             result = dfa_calc_str(str, id_list, list_len, err);
             if (result == NULL)
             {
-                //error_print(err);
+                *code = ERROR_CODE;
                 return NULL;
             }
             *code = PRINT_CODE;
@@ -643,7 +632,7 @@ dfa_id *dfa_parse_string(const char *str, int *code, error *err, dfa_id **id_lis
         dfa *a = dfa_calc_str(str, id_list, list_len, err);
         if (a == NULL)
         {
-            //error_print(err);
+            *code = ERROR_CODE;
             return NULL;
         }
         dfa_id *result = malloc(sizeof(dfa_id));
@@ -696,9 +685,8 @@ void dfa_interpreter(error *err)
             if (code == ERROR_CODE)
             {
                 error_print(err);
-                return;
             }
-            if (code == EXIT_CODE)
+            else if (code == EXIT_CODE)
             {
                 break;
             }
@@ -717,11 +705,8 @@ void dfa_interpreter(error *err)
                     return;
                 }
             }
-            dfa_id_print(id_list, id_num);
-            printf("%d %s\n", id_num, new_id->str);
             id_list[id_num] = new_id;
             ++id_num;
-            dfa_id_print(id_list, id_num);
         }
 
     }
